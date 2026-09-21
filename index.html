@@ -180,15 +180,19 @@
 
   .gal-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: clamp(18px, 3vh, 30px) 26px;
+    /* Five across, so nine symbols are two rows. At four it became three
+       rows and the gallery started scrolling, which loses the one thing it
+       is for -- seeing the whole set at once. */
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: clamp(18px, 3vh, 30px) 24px;
     /* Capped and centred. The art box is sized off the viewport height,
        so on a wide monitor an uncapped column is far wider than the
        artwork in it and every symbol floats in its own empty acre. */
-    max-width: 1180px;
+    max-width: 1320px;
     margin-inline: auto;
   }
-  @media (max-width: 1100px) { .gal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 1240px) { .gal-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (max-width: 1000px) { .gal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (max-width: 760px)  { .gal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
   .tile { display: flex; flex-direction: column; gap: 0; }
@@ -543,7 +547,7 @@
     <div class="stage-head">
       <div class="head-line">
         <span class="wordmark">Jade Symbols</span>
-        <span class="sub">J &middot; Q &middot; K &middot; A &middot; Ram &middot; Jaguar &middot; Cobra &middot; Wilds &mdash; carved specimen set</span>
+        <span class="sub">J &middot; Q &middot; K &middot; A &middot; Ram &middot; Jaguar &middot; Cobra &middot; Wilds &middot; Coin &mdash; carved specimen set</span>
       </div>
       <button class="galbtn" id="galOpen" aria-haspopup="dialog">
         <svg viewBox="0 0 12 12" aria-hidden="true"><rect x="0" y="0" width="5" height="5"/><rect x="7" y="0" width="5" height="5"/><rect x="0" y="7" width="5" height="5"/><rect x="7" y="7" width="5" height="5"/></svg>
@@ -560,6 +564,7 @@
       <button class="glyph wide" data-key="RED" data-group="jaguar" aria-pressed="false">Jaguar</button>
       <button class="glyph wide" data-key="COB" aria-pressed="false">Cobra</button>
       <button class="glyph wide" data-key="WILD" data-group="wild" aria-pressed="false">Wilds</button>
+      <button class="glyph wide" data-key="COIN" aria-pressed="false">Coin</button>
     </div>
 
     <aside class="actual" id="actualBox">
@@ -748,6 +753,11 @@ const SPECIMENS = {
          role: "Sapphire \u00b7 high pay \u00b7 sculpted, baked unwrap",
          tone: "#3aa9ce", tris: "150,000", tex: "2048 \u00d7 2039", contours: 1,
          maps: "baked colour + normal + roughness", counter: "none", size: "18.1 MB" },
+  COIN: { file: "models/14_coin_gold.js", key: "14_coin_gold",
+          name: "Sun Coin", short: "Coin", tier: "gold \u00b7 scatter",
+          role: "Gold \u00b7 scatter",
+          tone: "#f2c230", tris: "103,221", tex: "2048 \u00d7 2013",
+          contours: 1, counter: "none", size: "12.5 MB" },
   WILD: { file: "models/12_wild_mask.js", key: "12_wild_mask",
           name: "Wild \u2014 Mask", short: "Wild", tier: "gold \u00b7 substitutes",
           role: "Gold \u00b7 substitutes for any symbol",
@@ -790,7 +800,7 @@ const GROUP_SWITCH = { jaguar: "Finish", wild: "Variant" };
 // they get their names instead.
 const GROUP_DOTS = { jaguar: true, wild: false };
 // Sheet order: the creatures first, then the face cards high to low.
-const GALLERY = ["RAM", "RED", "COB", "WILD", "A", "K", "Q", "J"];
+const GALLERY = ["RAM", "RED", "COB", "WILD", "COIN", "A", "K", "Q", "J"];
 // Which paint each group was last left on, so coming back to the shelf
 // button returns to the one that was being looked at.
 const lastOf = {};
