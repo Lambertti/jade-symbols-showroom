@@ -291,7 +291,9 @@
        newest symbol, the one most worth showing, was the one off the
        edge. */
     flex-wrap: wrap;
-    max-width: calc(100% - 44px);
+    /* Stops short of the reel inset. Without this the last buttons sit
+       underneath it on a phone and neither is usable. */
+    max-width: calc(100% - 44px - var(--cell, 180px) - 14px);
   }
   .glyph {
     width: 46px; height: 46px;
@@ -322,7 +324,7 @@
     position: absolute;
     right: 22px;
     bottom: calc(22px + env(safe-area-inset-bottom, 0px));
-    width: 180px;
+    width: var(--cell, 180px);
     border: 1px solid var(--rule);
     border-radius: 3px;
     /* No fill. The inset is rendered by WebGL into the canvas underneath
@@ -334,6 +336,9 @@
   .actual-cap {
     font-family: "IBM Plex Mono", ui-monospace, monospace;
     font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     letter-spacing: .06em;
     color: var(--dust);
     padding: 6px 8px;
@@ -476,7 +481,12 @@
   @media (max-width: 860px) {
     .shell { grid-template-columns: 1fr; grid-template-rows: 62svh auto; min-height: 0; }
     .panel { border-left: 0; border-top: 1px solid var(--rule); }
-    .actual { display: none; }
+    /* The inset used to be hidden here. It is the one view that answers
+       "does this still read on a reel", so hiding it on the device the
+       pitch is most often given from was exactly backwards. It scales to
+       fit instead. */
+    .actual { right: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+    .actual-cap { font-size: 9px; padding: 4px 6px; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { transition-duration: .01ms !important; }
@@ -954,19 +964,37 @@ function describe(k) {
 }
 
 const REEL_CELL = 180;
+let reelCells = 1;
+
+/* 180px is the real reel cell and stays the target, but a phone stage is
+   ~440px tall and the expanded wild wants three of them. Rather than drop
+   the inset -- which is the whole point of the panel -- the cell shrinks
+   to whatever actually fits and the caption states the size it is really
+   showing, so the number is never a claim the box isn't keeping. */
+function reelCell() {
+  const st = stage.getBoundingClientRect();
+  const room = Math.min(st.width * 0.42, st.height - 96);
+  return Math.max(52, Math.min(REEL_CELL, Math.floor(room / reelCells)));
+}
 
 function reelInset(s) {
-  const cells = s.tall ? 3 : 1;
-  const slot = el("actualSlot");
-  slot.style.setProperty("--slot-h", `${REEL_CELL * cells}px`);
-  el("actualCap").innerHTML = cells === 1
-    ? `AT REEL SIZE &mdash; ${REEL_CELL} px`
-    : `AT REEL SIZE &mdash; ${REEL_CELL} &times; ${REEL_CELL * cells} px, ${cells} cells`;
+  if (s) reelCells = s.tall ? 3 : 1;
+  const cell = reelCell();
+  const box = el("actualBox"), slot = el("actualSlot");
+  document.documentElement.style.setProperty("--cell", `${cell}px`);
+  slot.style.setProperty("--slot-h", `${cell * reelCells}px`);
+  // The caption has to fit the box it labels, and the box can be 70px
+  // wide. Long form when there is room, bare numbers when there is not.
+  const exact = cell === REEL_CELL;
+  const label = exact ? "AT REEL SIZE" : "REEL PREVIEW";
+  const size = reelCells === 1 ? `${cell} px`
+                               : `${cell}\u00d7${cell * reelCells}, ${reelCells} cells`;
+  el("actualCap").innerHTML = cell >= 150 ? `${label} &mdash; ${size}` : size;
   slot.textContent = "";
-  for (let i = 1; i < cells; i++) {
+  for (let i = 1; i < reelCells; i++) {
     const rule = document.createElement("div");
     rule.className = "cell-rule";
-    rule.style.top = `${(i / cells) * 100}%`;
+    rule.style.top = `${(i / reelCells) * 100}%`;
     slot.appendChild(rule);
   }
 }
@@ -1176,7 +1204,7 @@ function resize() {
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
-new ResizeObserver(resize).observe(stage);
+new ResizeObserver(() => { resize(); reelInset(null); }).observe(stage);
 resize();
 
 const clock = new THREE.Clock();
@@ -1194,7 +1222,7 @@ renderer.setAnimationLoop(() => {
   /* The reel-size inset renders the same scene into a 180px square in the
      corner. A symbol that is beautiful at full screen and mud at reel size
      has failed, and that is not something a big viewport ever reveals. */
-  if (reelOn && w > 640) {
+  if (reelOn && !document.getElementById("actualBox").hidden) {
     // Measured, not assumed square: the expanding wild's slot is three
     // cells tall and the viewport has to match it or the symbol renders
     // into the wrong rectangle.
