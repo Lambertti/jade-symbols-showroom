@@ -1,3 +1,12 @@
+<meta charset="utf-8">
+<!-- Without this a phone browser lays the page out at a virtual 980px and
+     scales the result down. Measured on an iPhone viewport: innerWidth 980,
+     stage 640x2125 CSS, and a canvas of 1280x4250 device pixels -- past the
+     4096 limit most mobile GPUs have, so the bottom of the canvas, which is
+     where the reel inset sits, simply did not render. The artifact host
+     injects this tag; serving the file directly does not, which is why the
+     bug only appeared once the page moved to its own hosting. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Jade Symbols Vitrine</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
