@@ -493,9 +493,21 @@
     /* The inset used to be hidden here. It is the one view that answers
        "does this still read on a reel", so hiding it on the device the
        pitch is most often given from was exactly backwards. It scales to
-       fit instead. */
-    .actual { right: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+       fit instead.
+
+       And it moves to the top. Side by side at the bottom, the two of them
+       have to share 393px: the picker was left 155px, which wrapped eight
+       symbols onto four rows stacked over the model. Stacked instead, each
+       gets the full width and the buttons come back to two rows. */
+    .actual {
+      right: 14px;
+      top: calc(104px + env(safe-area-inset-top, 0px));
+      bottom: auto;
+    }
     .actual-cap { font-size: 9px; padding: 4px 6px; }
+    .picker { left: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+    /* No inset to dodge down here any more. */
+    .picker { max-width: calc(100% - 28px); }
   }
   @media (prefers-reduced-motion: reduce) {
     * { transition-duration: .01ms !important; }
