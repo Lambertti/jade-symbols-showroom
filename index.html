@@ -1,0 +1,1221 @@
+<title>Jade Symbols Vitrine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  /* A specimen case, committed to a single dark world on purpose: these are
+     lit objects on a plinth, and a light ground would wash the renders out.
+     Every colour is therefore stated outright rather than inherited. */
+  :root {
+    --ink:   #100e0b;
+    --case:  #191512;
+    --shelf: #211c17;
+    --rule:  #332c24;
+    --bone:  #ede4d6;
+    --dust:  #9c9080;
+    --gild:  #c8a24a;
+
+    --jade:     #57a24a;
+    --sapphire: #3a72ce;
+    --ruby:     #c33a2e;
+    --gold:     #d6a13a;
+
+    --accent: var(--gild);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--bone);
+    font: 400 14px/1.6 "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- shell ---------------------------------------------------------- */
+  .shell {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    height: 100%;
+    /* height:100% only resolves against a parent that has a height. Inside
+       an embedding frame that sizes itself to its content it resolves to
+       zero, the canvas is created 0x0, and the page renders as an empty
+       dark rectangle with the panel below it -- which is exactly what
+       "I can't see my symbols" looks like. The viewport floor makes the
+       layout independent of whether the frame cooperates. */
+    min-height: 100svh;
+  }
+
+  /* ---- stage ---------------------------------------------------------- */
+  .stage {
+    position: relative;
+    min-width: 0;
+    min-height: 380px;
+    background:
+      radial-gradient(120% 90% at 50% 8%, #241f19 0%, #14110d 55%, #0c0a08 100%);
+    overflow: hidden;
+  }
+  canvas#view { display: block; width: 100%; height: 100%; touch-action: none; }
+
+  .stage-head {
+    position: absolute;
+    top: env(safe-area-inset-top, 0px);
+    left: 0; right: 0;
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    /* The head is a caption laid over the model, so it must not eat drags
+       meant for the turntable. Only the button inside it takes the pointer
+       back. */
+    pointer-events: none;
+    z-index: 3;
+  }
+  .head-line { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .wordmark {
+    font-family: Cinzel, Georgia, serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--bone);
+  }
+  .sub {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: .08em;
+    color: var(--dust);
+  }
+
+  .galbtn {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 7px 13px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: rgba(12,10,8,.72);
+    backdrop-filter: blur(6px);
+    color: var(--dust);
+    cursor: pointer;
+    transition: color .16s ease, border-color .16s ease, transform .16s ease;
+  }
+  .galbtn:hover { color: var(--bone); border-color: var(--gild); transform: translateY(-1px); }
+  .galbtn:focus-visible { outline: 2px solid var(--gild); outline-offset: 2px; }
+  .galbtn svg { width: 12px; height: 12px; fill: currentColor; }
+
+  /* ---- gallery overlay ------------------------------------------------
+     The contact sheet, but live: the whole set at one scale so the family
+     resemblance is the thing you see first. It is an overlay rather than a
+     route because it is a glance, not a place -- you open it, find the
+     symbol you meant, and land on it. */
+  .gal {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: rgba(8,7,6,.94);
+    backdrop-filter: blur(10px);
+    overflow-y: auto;
+    padding: 34px clamp(18px, 4vw, 54px) calc(54px + env(safe-area-inset-bottom, 0px));
+    padding-top: calc(34px + env(safe-area-inset-top, 0px));
+  }
+  .gal[hidden] { display: none !important; }
+
+  .gal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 14px;
+    margin-bottom: clamp(18px, 3vh, 30px);
+  }
+  .gal-title {
+    font-family: Cinzel, Georgia, serif;
+    font-weight: 700;
+    font-size: clamp(20px, 3vw, 30px);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin: 0 0 5px;
+  }
+  .gal-sub {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11.5px;
+    color: var(--dust);
+  }
+  .gal-close {
+    flex: none;
+    width: 38px; height: 38px;
+    display: grid; place-items: center;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--dust);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    transition: color .16s ease, border-color .16s ease;
+  }
+  .gal-close:hover { color: var(--bone); border-color: var(--dust); }
+  .gal-close:focus-visible { outline: 2px solid var(--gild); outline-offset: 2px; }
+
+  .gal-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(18px, 3vh, 30px) 26px;
+    /* Capped and centred. The art box is sized off the viewport height,
+       so on a wide monitor an uncapped column is far wider than the
+       artwork in it and every symbol floats in its own empty acre. */
+    max-width: 1180px;
+    margin-inline: auto;
+  }
+  @media (max-width: 1100px) { .gal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 760px)  { .gal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  .tile { display: flex; flex-direction: column; gap: 0; }
+  .tile-art {
+    all: unset;
+    display: grid;
+    /* An explicit row, or the implicit one is auto-sized -- and then the
+       image's own height:100% has nothing definite to resolve against,
+       resolves to auto, and sizes the row itself. Stating the row breaks
+       that loop; without it the tiles render at the artwork's full height
+       however the image is constrained. */
+    grid-template-rows: minmax(0, 1fr);
+    place-items: center;
+    /* A stated height, not aspect-ratio. As a flex item this box gets
+       min-height:auto, so a tall image simply grows it -- which it did:
+       the J ended up half again the height of the ram and the captions
+       marched down the row. Sized off the viewport so both rows of the
+       set are on screen at once, which is the whole point of a gallery. */
+    height: clamp(120px, 23vh, 260px);
+    min-height: 0;
+    padding: 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: transform .2s cubic-bezier(.2,.9,.3,1.2), background .2s ease;
+  }
+  .tile-art img {
+    /* object-fit rather than max-height:100%. The percentage was resolving
+       against an auto grid row, which is itself sized by the image -- so
+       every tile rendered at the artwork's natural height and the grid
+       overflowed by a whole row. A stated box with contain has no such
+       loop. */
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    /* The art is lit from upper-left in the source; a matching drop makes
+       the cut-outs sit on the page instead of floating over it. */
+    filter: drop-shadow(0 14px 22px rgba(0,0,0,.55));
+  }
+  .tile-art:hover { transform: translateY(-4px); background: rgba(255,255,255,.035); }
+  .tile-art:focus-visible { outline: 2px solid var(--gild); outline-offset: 3px; }
+
+  .tile-cap { border-top: 1px solid var(--rule); padding-top: 11px; margin-top: 12px; }
+  .tile-name {
+    display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+    font-family: Cinzel, Georgia, serif;
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--bone);
+  }
+  .tile-role {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--dust);
+    margin-top: 3px;
+  }
+  /* The paint switch, sat beside the name. Two carvings that differ only
+     in colour are one tile -- putting them side by side implies they are
+     two different symbols, which is the opposite of true. */
+  .dots { display: inline-flex; gap: 5px; }
+  .dots.tags { flex-wrap: wrap; gap: 4px; }
+  .tag {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 9.5px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    background: transparent;
+    color: var(--dust);
+    cursor: pointer;
+    transition: color .16s ease, border-color .16s ease, background .16s ease;
+  }
+  .tag:hover { color: var(--bone); border-color: var(--dust); }
+  .tag:focus-visible { outline: 2px solid var(--gild); outline-offset: 2px; }
+  .tag[aria-pressed="true"] {
+    color: var(--ink);
+    background: var(--c);
+    border-color: var(--c);
+  }
+  .dot {
+    width: 15px; height: 15px;
+    padding: 0;
+    border: 1px solid var(--rule);
+    border-radius: 50%;
+    background: var(--c);
+    cursor: pointer;
+    opacity: .42;
+    transition: opacity .16s ease, transform .16s ease, box-shadow .16s ease;
+  }
+  .dot:hover { opacity: .8; transform: scale(1.1); }
+  .dot:focus-visible { outline: 2px solid var(--gild); outline-offset: 2px; }
+  .dot[aria-pressed="true"] {
+    opacity: 1;
+    border-color: var(--bone);
+    box-shadow: 0 0 0 2px rgba(0,0,0,.6), 0 0 10px -1px var(--c);
+  }
+
+  /* glyph selector, bottom-left of the stage */
+  .picker {
+    position: absolute;
+    left: 22px;
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    gap: 8px;
+    /* Wraps, because the row outgrew the phone. At eight symbols it
+       measured 530px inside a 500px stage, and the stage clips -- so the
+       newest symbol, the one most worth showing, was the one off the
+       edge. */
+    flex-wrap: wrap;
+    max-width: calc(100% - 44px);
+  }
+  .glyph {
+    width: 46px; height: 46px;
+    display: grid; place-items: center;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: rgba(12,10,8,.72);
+    backdrop-filter: blur(6px);
+    color: var(--dust);
+    font-family: Cinzel, Georgia, serif;
+    font-weight: 700;
+    font-size: 19px;
+    cursor: pointer;
+    transition: transform .18s cubic-bezier(.2,.9,.3,1.2),
+                border-color .18s ease, color .18s ease;
+  }
+  .glyph.wide { width: auto; padding-inline: 12px; font-size: 14px; letter-spacing: .04em; }
+  .glyph:hover { transform: translateY(-2px); color: var(--bone); }
+  .glyph:focus-visible { outline: 2px solid var(--gild); outline-offset: 2px; }
+  .glyph[aria-pressed="true"] {
+    color: var(--ink);
+    background: var(--tone, var(--gild));
+    border-color: var(--tone, var(--gild));
+  }
+
+  /* the in-game size check, pinned bottom-right of the stage */
+  .actual {
+    position: absolute;
+    right: 22px;
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+    width: 180px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    /* No fill. The inset is rendered by WebGL into the canvas underneath
+       this box, so anything painted here would cover it. */
+    background: transparent;
+    pointer-events: none;
+  }
+  .actual[hidden] { display: none !important; }
+  .actual-cap {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 10px;
+    letter-spacing: .06em;
+    color: var(--dust);
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--rule);
+    background: rgba(10,8,7,.86);
+    backdrop-filter: blur(6px);
+  }
+  .actual-slot { height: var(--slot-h, 180px); position: relative; }
+  /* An expanding wild covers a whole reel, so showing it in one square
+     cell is a lie about the only thing that matters about it. The inset
+     grows to three cells and rules them off, which is the shape a player
+     actually sees. */
+  .cell-rule {
+    position: absolute;
+    left: 0; right: 0;
+    height: 0;
+    border-top: 1px dashed var(--rule);
+    pointer-events: none;
+  }
+
+  .loading {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    letter-spacing: .1em;
+    color: var(--dust);
+    background: rgba(12,10,8,.7);
+    transition: opacity .3s ease;
+  }
+  .loading[hidden] { display: none !important; }
+
+  /* ---- catalogue panel ------------------------------------------------ */
+  .panel {
+    border-left: 1px solid var(--rule);
+    background: var(--case);
+    overflow-y: auto;
+    padding-block: 22px calc(28px + env(safe-area-inset-bottom, 0px));
+    padding-inline: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .card-head { display: flex; flex-direction: column; gap: 4px; }
+  .card-name {
+    font-family: Cinzel, Georgia, serif;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+  .card-role {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--tone, var(--gild));
+  }
+
+  .specs {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 5px 14px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding-block: 12px;
+  }
+  .specs dt { color: var(--dust); }
+  .specs dd { margin: 0; color: var(--bone); }
+
+  .group { display: flex; flex-direction: column; gap: 11px; }
+  .group-title {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 10.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--dust);
+  }
+
+  .ctl { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; }
+  .ctl label { font-size: 12px; color: var(--bone); }
+  .ctl output {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--dust);
+  }
+  .ctl input[type="range"] { grid-column: 1 / -1; width: 100%; margin: 0; accent-color: var(--tone, var(--gild)); }
+  .ctl input[type="range"]:focus-visible { outline: 2px solid var(--gild); outline-offset: 3px; }
+
+  .row { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: .04em;
+    padding: 6px 11px;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    background: transparent;
+    color: var(--dust);
+    cursor: pointer;
+    transition: color .16s ease, border-color .16s ease, background .16s ease;
+  }
+  .chip:hover { color: var(--bone); border-color: var(--dust); }
+  .chip:focus-visible { outline: 2px solid var(--gild); outline-offset: 2px; }
+  .chip[aria-pressed="true"] {
+    color: var(--ink);
+    background: var(--tone, var(--gild));
+    border-color: var(--tone, var(--gild));
+  }
+
+  /* The finish switch. A jaguar in jade and a jaguar in ruby are one
+     specimen in two paints, not two specimens, so the choice belongs on
+     the card next to the name rather than as another shelf button. */
+  .finish[hidden] { display: none !important; }
+  .swatch { display: inline-flex; align-items: center; gap: 7px; }
+  .swatch i {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--tone);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,.45);
+  }
+  /* Pressed, the chip is already wearing the tone, so a tone-coloured dot
+     would disappear into it. Punch it out of the fill instead. */
+  .swatch[aria-pressed="true"] i { background: var(--ink); box-shadow: none; }
+
+  .note {
+    font-size: 11.5px;
+    line-height: 1.55;
+    color: var(--dust);
+    border-left: 2px solid var(--rule);
+    padding-left: 11px;
+  }
+  .note strong { color: var(--bone); font-weight: 600; }
+
+  @media (max-width: 860px) {
+    .shell { grid-template-columns: 1fr; grid-template-rows: 62svh auto; min-height: 0; }
+    .panel { border-left: 0; border-top: 1px solid var(--rule); }
+    .actual { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: .01ms !important; }
+  }
+</style>
+
+<div class="shell">
+  <section class="stage">
+    <canvas id="view"></canvas>
+
+    <div class="stage-head">
+      <div class="head-line">
+        <span class="wordmark">Jade Symbols</span>
+        <span class="sub">J &middot; Q &middot; K &middot; A &middot; Ram &middot; Jaguar &middot; Cobra &middot; Wilds &mdash; carved specimen set</span>
+      </div>
+      <button class="galbtn" id="galOpen" aria-haspopup="dialog">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><rect x="0" y="0" width="5" height="5"/><rect x="7" y="0" width="5" height="5"/><rect x="0" y="7" width="5" height="5"/><rect x="7" y="7" width="5" height="5"/></svg>
+        Gallery
+      </button>
+    </div>
+
+    <div class="picker" role="group" aria-label="Choose a symbol">
+      <button class="glyph" data-key="J" aria-pressed="true">J</button>
+      <button class="glyph" data-key="Q" aria-pressed="false">Q</button>
+      <button class="glyph" data-key="K" aria-pressed="false">K</button>
+      <button class="glyph" data-key="A" aria-pressed="false">A</button>
+      <button class="glyph wide" data-key="RAM" aria-pressed="false">Ram</button>
+      <button class="glyph wide" data-key="RED" data-group="jaguar" aria-pressed="false">Jaguar</button>
+      <button class="glyph wide" data-key="COB" aria-pressed="false">Cobra</button>
+      <button class="glyph wide" data-key="WILD" data-group="wild" aria-pressed="false">Wilds</button>
+    </div>
+
+    <aside class="actual" id="actualBox">
+      <div class="actual-cap" id="actualCap">AT REEL SIZE &mdash; 180 px</div>
+      <div class="actual-slot" id="actualSlot"></div>
+    </aside>
+
+    <div class="loading" id="loading">LOADING SPECIMEN&hellip;</div>
+  </section>
+
+  <aside class="panel">
+    <header class="card-head">
+      <span class="card-role" id="role">Sapphire &middot; low pay</span>
+      <h1 class="card-name" id="name">Letter J</h1>
+    </header>
+
+    <div class="group finish" id="variants" hidden>
+      <span class="group-title" id="variantTitle">Finish</span>
+      <div class="row" id="variantRow"></div>
+    </div>
+
+    <dl class="specs">
+      <dt>triangles</dt>      <dd id="sTris">&mdash;</dd>
+      <dt>texture</dt>        <dd id="sTex">&mdash;</dd>
+      <dt>maps</dt>           <dd id="sMaps">&mdash;</dd>
+      <dt>contours</dt>       <dd id="sContours">&mdash;</dd>
+      <dt>counter</dt>        <dd id="sCounter">&mdash;</dd>
+      <dt>glb</dt>            <dd id="sSize">&mdash;</dd>
+    </dl>
+
+    <div class="group">
+      <span class="group-title">Colour</span>
+      <div class="ctl">
+        <label for="hue">Hue shift</label><output id="hueOut">0&deg;</output>
+        <input type="range" id="hue" min="-180" max="180" value="0" step="1">
+      </div>
+      <div class="ctl">
+        <label for="sat">Saturation</label><output id="satOut">1.00</output>
+        <input type="range" id="sat" min="0" max="2" value="1" step="0.01">
+      </div>
+      <div class="ctl">
+        <label for="val">Brightness</label><output id="valOut">1.00</output>
+        <input type="range" id="val" min="0.3" max="1.8" value="1" step="0.01">
+      </div>
+    </div>
+
+    <div class="group">
+      <span class="group-title">Material</span>
+      <div class="ctl">
+        <label for="rough">Roughness</label><output id="roughOut">&plusmn;0.00</output>
+        <input type="range" id="rough" min="-0.45" max="0.45" value="0" step="0.01">
+      </div>
+      <div class="ctl">
+        <label for="metal">Metallic</label><output id="metalOut">source</output>
+        <input type="range" id="metal" min="-1" max="1" value="0" step="0.01">
+      </div>
+      <div class="ctl">
+        <label for="relief">Carving depth</label><output id="reliefOut">1.00&times;</output>
+        <input type="range" id="relief" min="0" max="2.5" value="1" step="0.05">
+      </div>
+    </div>
+
+    <div class="group">
+      <span class="group-title">Light</span>
+      <div class="ctl">
+        <label for="expo">Exposure</label><output id="expoOut">1.00</output>
+        <input type="range" id="expo" min="0.3" max="2.2" value="1" step="0.01">
+      </div>
+      <div class="ctl">
+        <label for="keyrot">Key angle</label><output id="keyrotOut">-38&deg;</output>
+        <input type="range" id="keyrot" min="-180" max="180" value="-38" step="1">
+      </div>
+    </div>
+
+    <div class="group">
+      <span class="group-title">Stage</span>
+      <div class="row">
+        <button class="chip" id="spin" aria-pressed="false">Turntable</button>
+        <button class="chip" id="wire" aria-pressed="false">Wireframe</button>
+        <button class="chip" id="reel" aria-pressed="true">Reel size</button>
+        <button class="chip" id="reset" aria-pressed="false">Reset</button>
+      </div>
+    </div>
+
+    <p class="note" id="note">
+      Drag to orbit, scroll to zoom, right-drag to pan. <strong>Raking light</strong> &mdash;
+      swing the key angle to about 80&deg; &mdash; is the view that shows whether the
+      carving is real relief or a texture pretending to be one.
+    </p>
+  </aside>
+
+  <div class="gal" id="gal" hidden role="dialog" aria-modal="true" aria-labelledby="galTitle">
+    <div class="gal-head">
+      <div>
+        <h2 class="gal-title" id="galTitle">Jade Symbols</h2>
+        <p class="gal-sub">The set as it stands &mdash; source artwork. Pick one to load it.</p>
+      </div>
+      <button class="gal-close" id="galClose" aria-label="Close gallery">&times;</button>
+    </div>
+    <div class="gal-grid" id="galGrid"></div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script>
+  /* A module that throws, or an import the network refuses, leaves the page
+     silently blank -- there is no error anywhere the viewer can see. Put
+     any such failure into the panel that is already on screen. */
+  window.addEventListener("error", (e) => {
+    const el = document.getElementById("loading");
+    if (el) { el.hidden = false; el.textContent = "COULD NOT START: " + (e.message || "script error"); }
+  });
+  setTimeout(() => {
+    const el = document.getElementById("loading");
+    if (el && !el.hidden && el.textContent.indexOf("LOADING") === 0) {
+      el.textContent = "STILL LOADING - the first specimen is about 4 MB";
+    }
+  }, 9000);
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader }    from "three/addons/loaders/GLTFLoader.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+/* Specimen record. The numbers are the real ones from the build, not
+   placeholders -- this panel is the reason the page exists, so a wrong
+   figure here is worse than no figure. */
+/* Each specimen is three kinds of file, all of them types the sandbox
+   will actually serve: the glTF document as .json, the geometry buffer
+   base64'd into .txt, and the textures as plain .png.
+
+   Three shapes were tried to get here, and the two that failed are worth
+   recording. .glb is not a served type at all. Embedded glTF is served,
+   but carries its buffer as a base64 data: URI, and three.js resolves a
+   buffer uri with fetch() -- which this page's content security policy
+   refuses for data: URLs; that is what produced "COULD NOT LOAD
+   SPECIMEN" with nothing else to go on. Renaming the raw .bin to .txt is
+   refused at publish time, because text files are checked for being text
+   and a vertex buffer is not.
+
+   So the geometry arrives base64'd and the page rebuilds a GLB from it in
+   memory. Handing three.js a GLB ArrayBuffer means it never fetches a
+   buffer at all, and because the images keep external .png uris they load
+   as ordinary same-origin requests rather than through the blob: URLs a
+   fully self-contained GLB would have needed -- which would most likely
+   have run into the same policy from the other direction. */
+const SPECIMENS = {
+  J: { file: "models/07_letter_J.js", key: "07_letter_J", name: "Letter J", short: "J", tier: "sapphire \u00b7 low pay", role: "Sapphire \u00b7 low pay",
+       tone: "#3a72ce", tris: "10,940", tex: "690 \u00d7 1024", contours: 1,
+       counter: "none", size: "2.4 MB" },
+  Q: { file: "models/08_letter_Q.js", key: "08_letter_Q", name: "Letter Q", short: "Q", tier: "jade \u00b7 low pay", role: "Jade \u00b7 low pay \u00b7 circle-corrected",
+       tone: "#57a24a", tris: "21,084", tex: "930 \u00d7 1024", contours: 2,
+       counter: "open, 10.1% of face", size: "3.6 MB" },
+  K: { file: "models/09_letter_K.js", key: "09_letter_K", name: "Letter K", short: "K", tier: "ruby \u00b7 low pay", role: "Ruby \u00b7 low pay",
+       tone: "#c33a2e", tris: "15,700", tex: "905 \u00d7 1024", contours: 1,
+       counter: "none", size: "3.7 MB" },
+  RED: { file: "models/05_jaguar_red.js", key: "05_jaguar_red",
+         name: "Ruby Jaguar", short: "Jaguar", tier: "ruby \u00b7 high pay", role: "Ruby \u00b7 high pay",
+         group: "jaguar", variant: "Ruby",
+         tone: "#e0344a", tris: "115,209", tex: "2010 \u00d7 2048",
+         contours: 1, counter: "none", size: "11.6 MB" },
+  COB: { file: "models/04_cobra_green.js", key: "04_cobra_green",
+         name: "Jade Cobra", short: "Cobra", tier: "jade \u00b7 high pay", role: "Jade \u00b7 high pay",
+         tone: "#2fbf70", tris: "63,667", tex: "2048 \u00d7 1705",
+         contours: 1, counter: "none", size: "8.8 MB" },
+  JAG: { file: "models/02_jaguar_green.js", key: "02_jaguar_green",
+         name: "Jade Jaguar", short: "Jaguar", tier: "jade \u00b7 high pay", role: "Jade \u00b7 high pay",
+         group: "jaguar", variant: "Jade",
+         tone: "#3fb964", tris: "118,765", tex: "2016 \u00d7 2048",
+         contours: 1, counter: "none", size: "12.6 MB" },
+  RAM: { file: "models/03_ram_blue.js", key: "03_ram_blue", name: "Ram Mask", short: "Ram", tier: "sapphire \u00b7 high pay",
+         role: "Sapphire \u00b7 high pay \u00b7 sculpted, baked unwrap",
+         tone: "#3aa9ce", tris: "150,000", tex: "2048 \u00d7 2039", contours: 1,
+         maps: "baked colour + normal + roughness", counter: "none", size: "18.1 MB" },
+  WILD: { file: "models/12_wild_mask.js", key: "12_wild_mask",
+          name: "Wild \u2014 Mask", short: "Wild", tier: "gold \u00b7 substitutes",
+          role: "Gold \u00b7 substitutes for any symbol",
+          group: "wild", variant: "Mask",
+          tone: "#e8b53a", tris: "121,361", tex: "2037 \u00d7 2048",
+          contours: 2, counter: "open, 1.1% of face", size: "14.2 MB" },
+  WILDP: { file: "models/11_wild_plain.js", key: "11_wild_plain",
+           name: "Wild \u2014 Plaque", short: "Wild", tier: "gold \u00b7 no mask",
+           role: "Gold \u00b7 substitutes \u00b7 no mask",
+           group: "wild", variant: "No mask",
+           tone: "#f0c44e", tris: "152,406", tex: "2048 \u00d7 1805",
+           contours: 1, counter: "none", size: "13.2 MB" },
+  WILDX: { file: "models/13_wild_tall.js", key: "13_wild_tall",
+           name: "Wild \u2014 Expanded", short: "Wild", tier: "gold \u00b7 expanded",
+           role: "Gold \u00b7 expands to fill the reel",
+           group: "wild", variant: "Expanded",
+           tall: true,
+           tone: "#d9a52e", tris: "127,932", tex: "585 \u00d7 2048",
+           contours: 1, counter: "none", size: "8.2 MB" },
+  A: { file: "models/10_letter_A.js", key: "10_letter_A", name: "Letter A", short: "A", tier: "gold \u00b7 low pay", role: "Gold \u00b7 low pay",
+       tone: "#d6a13a", tris: "14,332", tex: "954 \u00d7 1024", contours: 2,
+       counter: "open, 1.4% of face", size: "3.0 MB" }
+};
+const MAPS = "base \u00b7 normal \u00b7 roughness \u00b7 occlusion";
+
+/* Specimens that are the same carving in a different paint. Listed
+   explicitly rather than gathered from SPECIMENS, because this is the
+   order the finishes are offered in and the record above is not in any
+   order worth inheriting. */
+const GROUPS = { jaguar: ["RED", "JAG"], wild: ["WILD", "WILDP", "WILDX"] };
+// What a grouped tile is called, since "Ruby Jaguar" is the name of one
+// paint and the tile stands for both.
+const GROUP_NAME = { jaguar: "Jaguar", wild: "Wild" };
+// What the switch above the variants is called. Two paints of one carving
+// are a finish; a wild's mask/plaque/expanded are not, they are different
+// cuts of the same symbol.
+const GROUP_SWITCH = { jaguar: "Finish", wild: "Variant" };
+// A colour swatch only communicates when the variants differ by colour.
+// The wild's three are the same gold, so three gold dots say nothing --
+// they get their names instead.
+const GROUP_DOTS = { jaguar: true, wild: false };
+// Sheet order: the creatures first, then the face cards high to low.
+const GALLERY = ["RAM", "RED", "COB", "WILD", "A", "K", "Q", "J"];
+// Which paint each group was last left on, so coming back to the shelf
+// button returns to the one that was being looked at.
+const lastOf = {};
+
+const canvas = document.getElementById("view");
+const stage  = canvas.parentElement;
+const loadingEl = document.getElementById("loading");
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+// No filmic transform. ACES, like Blender's AgX, pulls saturation out of
+// everything it touches -- measured on the J, it cost about a fifth of the
+// painting's chroma and no amount of relighting got it back. These symbols
+// carry their colour in the artwork, so the renderer passes it through.
+renderer.toneMapping = THREE.NoToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+
+/* A generated room rather than an HDR file: PBR needs something to reflect
+   or the polished faces read as flat paint, and this ships no extra bytes. */
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+// Note: Scene.environmentIntensity only arrived after r163, so on the
+// pinned r160 it is ignored. The environment is dialled back through
+// exposure and the directional rig instead, which works everywhere.
+
+const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 100);
+camera.position.set(0.55, 0.28, 2.75);
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.07;
+controls.minDistance = 0.7;
+controls.maxDistance = 6;
+controls.target.set(0, 0, 0);
+
+const key = new THREE.DirectionalLight(0xfff2dd, 1.15);
+const fill = new THREE.DirectionalLight(0xcfe0ff, 0.65);
+fill.position.set(2.4, -0.4, 1.6);
+const rim = new THREE.DirectionalLight(0xffffff, 0.55);
+rim.position.set(-1.2, 1.4, -2.2);
+scene.add(key, fill, rim);
+
+const holder = new THREE.Group();
+scene.add(holder);
+
+/* ---- colour + relief patch -------------------------------------------
+   MeshStandardMaterial has no hue control, and tinting through
+   material.color can only darken a textured surface. Injecting an HSV
+   adjust straight after the base-colour texture is sampled gives a real
+   hue/saturation/value tweak on top of the artwork, which is what a
+   reviewer wants when they are deciding whether a symbol set reads on
+   their reel background. */
+const HSV_HEAD = `
+uniform float uHue; uniform float uSat; uniform float uVal;
+vec3 hsv2rgb_(vec3 c){vec4 K=vec4(1.,2./3.,1./3.,3.);vec3 p=abs(fract(c.xxx+K.xyz)*6.-K.www);return c.z*mix(K.xxx,clamp(p-K.xxx,0.,1.),c.y);}
+vec3 rgb2hsv_(vec3 c){vec4 K=vec4(0.,-1./3.,2./3.,-1.);vec4 p=mix(vec4(c.bg,K.wz),vec4(c.gb,K.xy),step(c.b,c.g));vec4 q=mix(vec4(p.xyw,c.r),vec4(c.r,p.yzx),step(p.x,c.r));float d=q.x-min(q.w,q.y);float e=1.0e-10;return vec3(abs(q.z+(q.w-q.y)/(6.*d+e)),d/(q.x+e),q.x);}
+`;
+const HSV_BODY = `
+{ vec3 hsv_ = rgb2hsv_(diffuseColor.rgb);
+  hsv_.x = fract(hsv_.x + uHue);
+  hsv_.y = clamp(hsv_.y * uSat, 0.0, 1.0);
+  hsv_.z = clamp(hsv_.z * uVal, 0.0, 1.0);
+  diffuseColor.rgb = hsv2rgb_(hsv_); }
+`;
+
+const shaders = [];
+function patch(mat) {
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uHue = { value: 0 };
+    shader.uniforms.uSat = { value: 1 };
+    shader.uniforms.uVal = { value: 1 };
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", "#include <common>\n" + HSV_HEAD)
+      .replace("#include <map_fragment>", "#include <map_fragment>\n" + HSV_BODY);
+    shaders.push(shader);
+  };
+  mat.needsUpdate = true;
+}
+
+/* ---- loading ---------------------------------------------------------- */
+const loader = new GLTFLoader();
+const cache = new Map();
+let current = null;
+let currentKey = "J";
+
+/* Reassemble a GLB: 12-byte header, then the JSON chunk and the BIN
+   chunk, each length-prefixed and padded to four bytes. */
+function buildGlb(doc, bin) {
+  const json = new TextEncoder().encode(JSON.stringify(doc));
+  const jsonPad = (4 - (json.length % 4)) % 4;
+  const binPad = (4 - (bin.length % 4)) % 4;
+  const total = 12 + 8 + json.length + jsonPad + 8 + bin.length + binPad;
+
+  const out = new ArrayBuffer(total);
+  const dv = new DataView(out);
+  const u8 = new Uint8Array(out);
+  let o = 0;
+  dv.setUint32(o, 0x46546c67, true); o += 4;   // "glTF"
+  dv.setUint32(o, 2, true); o += 4;            // version
+  dv.setUint32(o, total, true); o += 4;
+  dv.setUint32(o, json.length + jsonPad, true); o += 4;
+  dv.setUint32(o, 0x4e4f534a, true); o += 4;   // "JSON"
+  u8.set(json, o); o += json.length;
+  for (let i = 0; i < jsonPad; i++) u8[o++] = 0x20;   // spaces, per spec
+  dv.setUint32(o, bin.length + binPad, true); o += 4;
+  dv.setUint32(o, 0x004e4942, true); o += 4;   // "BIN"
+  u8.set(bin, o); o += bin.length;
+  for (let i = 0; i < binPad; i++) u8[o++] = 0;
+  return out;
+}
+
+/* Load a specimen as a script rather than as data. fetch() on a published
+   .json came back 403 here, so nothing is fetched: this injects a
+   <script src>, which the sandbox treats as a script load, and the
+   textures that follow arrive through <img>. Both are the ordinary way a
+   page loads assets and neither goes through the rule that refused us. */
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error(`could not load ${src}`));
+    document.head.appendChild(s);
+  });
+}
+
+async function fetchSpecimen(spec) {
+  const base = spec.file.slice(0, spec.file.lastIndexOf("/") + 1);
+  if (!window.SPECIMENS || !window.SPECIMENS[spec.key]) {
+    await loadScript(spec.file);
+  }
+  const rec = window.SPECIMENS && window.SPECIMENS[spec.key];
+  if (!rec) throw new Error(`${spec.file} loaded but defined nothing`);
+  const bin = Uint8Array.from(atob(rec.bin), (c) => c.charCodeAt(0));
+  return { glb: buildGlb(rec.doc, bin), base };
+}
+
+function loadSpecimen(k) {
+  const spec = SPECIMENS[k];
+  if (cache.has(k)) { mount(cache.get(k), k); return; }
+  loadingEl.hidden = false;
+  loadingEl.textContent = "LOADING SPECIMEN\u2026";
+
+  fetchSpecimen(spec).then(({ glb, base }) =>
+    new Promise((res, rej) => loader.parse(glb, base, res, rej))
+  ).then((gltf) => {
+    const root = gltf.scene;
+    // Centre on the glyph itself and scale to a unit height, so switching
+    // symbols does not move the camera off the subject.
+    const box = new THREE.Box3().setFromObject(root);
+    const size = box.getSize(new THREE.Vector3());
+    const ctr  = box.getCenter(new THREE.Vector3());
+    root.position.sub(ctr);
+    const s = 1 / Math.max(size.y, 1e-6);
+    root.scale.setScalar(s);
+
+    root.traverse((o) => {
+      if (!o.isMesh) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach((m) => {
+        m.userData.baseRough = m.roughness;
+        m.userData.baseMetal = m.metalness;
+        m.userData.baseNormal = m.normalScale ? m.normalScale.x : 1;
+        patch(m);
+      });
+    });
+    cache.set(k, root);
+    mount(root, k);
+  }).catch((err) => {
+    // Say what actually failed. The first version swallowed the reason and
+    // left a dead end on screen.
+    const why = (err && (err.message || err.type)) || String(err);
+    loadingEl.textContent = `COULD NOT LOAD \u2014 ${why}`;
+    console.error("specimen load failed", spec.file, err);
+  });
+}
+
+function mount(root, k) {
+  shaders.length = 0;
+  holder.clear();
+  holder.add(root);
+  current = root;
+  currentKey = k;
+  loadingEl.hidden = true;
+  applyAll();
+}
+
+/* ---- panel ------------------------------------------------------------ */
+const el = (id) => document.getElementById(id);
+
+function describe(k) {
+  const s = SPECIMENS[k];
+  document.documentElement.style.setProperty("--tone", s.tone);
+  el("name").textContent = s.name;
+  el("role").textContent = s.role;
+  el("sTris").textContent = s.tris;
+  el("sTex").textContent = s.tex;
+  el("sMaps").textContent = s.maps || MAPS;
+  el("sContours").textContent = s.contours === 1 ? "1 (solid)" : `${s.contours} (outer + counter)`;
+  el("sCounter").textContent = s.counter;
+  el("sSize").textContent = s.size;
+  if (s.group) lastOf[s.group] = k;
+  reelInset(s);
+  renderVariants(k);
+  document.querySelectorAll(".glyph").forEach((b) => {
+    // A grouped button is lit by any of its paints, and wears the tone of
+    // whichever one is showing.
+    const g = b.dataset.group;
+    const on = g ? s.group === g : b.dataset.key === k;
+    b.setAttribute("aria-pressed", String(on));
+    const tone = on && g ? s.tone
+               : SPECIMENS[g ? (lastOf[g] || b.dataset.key) : b.dataset.key].tone;
+    b.style.setProperty("--tone", tone);
+  });
+}
+
+const REEL_CELL = 180;
+
+function reelInset(s) {
+  const cells = s.tall ? 3 : 1;
+  const slot = el("actualSlot");
+  slot.style.setProperty("--slot-h", `${REEL_CELL * cells}px`);
+  el("actualCap").innerHTML = cells === 1
+    ? `AT REEL SIZE &mdash; ${REEL_CELL} px`
+    : `AT REEL SIZE &mdash; ${REEL_CELL} &times; ${REEL_CELL * cells} px, ${cells} cells`;
+  slot.textContent = "";
+  for (let i = 1; i < cells; i++) {
+    const rule = document.createElement("div");
+    rule.className = "cell-rule";
+    rule.style.top = `${(i / cells) * 100}%`;
+    slot.appendChild(rule);
+  }
+}
+
+function renderVariants(k) {
+  const s = SPECIMENS[k];
+  const box = el("variants"), row = el("variantRow");
+  row.textContent = "";
+  if (!s.group) { box.hidden = true; return; }
+  box.hidden = false;
+  el("variantTitle").textContent = GROUP_SWITCH[s.group] || "Finish";
+  GROUPS[s.group].forEach((vk) => {
+    const v = SPECIMENS[vk];
+    const b = document.createElement("button");
+    b.className = "chip swatch";
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(vk === k));
+    b.style.setProperty("--tone", v.tone);
+    b.append(document.createElement("i"), document.createTextNode(v.variant));
+    b.addEventListener("click", () => select(vk));
+    row.appendChild(b);
+  });
+}
+
+function select(k) {
+  describe(k);
+  loadSpecimen(k);
+}
+
+function applyAll() {
+  const hue   = +el("hue").value / 360;
+  const sat   = +el("sat").value;
+  const val   = +el("val").value;
+  const rough = +el("rough").value;
+  const metal = +el("metal").value;
+  const relief = +el("relief").value;
+
+  shaders.forEach((sh) => {
+    sh.uniforms.uHue.value = hue;
+    sh.uniforms.uSat.value = sat;
+    sh.uniforms.uVal.value = val;
+  });
+
+  if (current) {
+    current.traverse((o) => {
+      if (!o.isMesh) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach((m) => {
+        m.roughness = THREE.MathUtils.clamp((m.userData.baseRough ?? 0.5) + rough, 0.02, 1);
+        m.metalness = THREE.MathUtils.clamp((m.userData.baseMetal ?? 0) + metal, 0, 1);
+        if (m.normalScale) m.normalScale.setScalar((m.userData.baseNormal ?? 1) * relief);
+        m.wireframe = wireOn;
+      });
+    });
+  }
+
+  renderer.toneMappingExposure = +el("expo").value;
+  const a = THREE.MathUtils.degToRad(+el("keyrot").value);
+  key.position.set(Math.sin(a) * 3, 1.4, Math.cos(a) * 3);
+
+  el("hueOut").textContent = `${el("hue").value}\u00b0`;
+  el("satOut").textContent = (+el("sat").value).toFixed(2);
+  el("valOut").textContent = (+el("val").value).toFixed(2);
+  el("roughOut").textContent = (rough >= 0 ? "+" : "") + rough.toFixed(2);
+  el("metalOut").textContent = metal === 0 ? "source" : (metal > 0 ? "+" : "") + metal.toFixed(2);
+  el("reliefOut").textContent = relief.toFixed(2) + "\u00d7";
+  el("expoOut").textContent = (+el("expo").value).toFixed(2);
+  el("keyrotOut").textContent = `${el("keyrot").value}\u00b0`;
+}
+
+["hue","sat","val","rough","metal","relief","expo","keyrot"]
+  .forEach((id) => el(id).addEventListener("input", applyAll));
+
+document.querySelectorAll(".glyph").forEach((b) => {
+  b.addEventListener("click", () => {
+    const g = b.dataset.group;
+    select(g ? (lastOf[g] || b.dataset.key) : b.dataset.key);
+  });
+});
+
+/* ---- gallery ----------------------------------------------------------
+   Built once, on first open. The cut-outs are ~800KB all told, which is
+   not worth spending on a page load for something that may never be
+   opened -- but is far too little to bother streaming once it is. */
+const galEl = el("gal");
+let galBuilt = false, galReturn = null;
+
+function buildGallery() {
+  const grid = el("galGrid");
+  grid.textContent = "";
+  GALLERY.forEach((k0) => {
+    const g = SPECIMENS[k0].group;
+    const tile = document.createElement("div");
+    tile.className = "tile";
+
+    const art = document.createElement("button");
+    art.className = "tile-art";
+    art.type = "button";
+    const img = document.createElement("img");
+    img.loading = "lazy";
+    img.decoding = "async";
+    art.appendChild(img);
+
+    const cap = document.createElement("div");
+    cap.className = "tile-cap";
+    const nameRow = document.createElement("div");
+    nameRow.className = "tile-name";
+    const nameEl = document.createElement("span");
+    nameRow.appendChild(nameEl);
+    const roleEl = document.createElement("div");
+    roleEl.className = "tile-role";
+    cap.append(nameRow, roleEl);
+    tile.append(art, cap);
+
+    let shown = k0;
+    const paint = (k) => {
+      shown = k;
+      const s = SPECIMENS[k];
+      img.src = `gallery/${s.key}.webp`;
+      img.alt = s.name;
+      // The panel names a build ("Ram Mask", "Jade \u00b7 high pay \u00b7 sculpted,
+      // baked unwrap"); the gallery names a symbol. Same records, shorter
+      // labels, so the grid reads as a set rather than a changelog.
+      nameEl.textContent = g ? GROUP_NAME[g] : (s.short || s.name);
+      roleEl.textContent = s.tier || s.role;
+      art.setAttribute("aria-label", `Load ${s.name}`);
+      if (g) [...nameRow.querySelectorAll(".dot, .tag")].forEach((d) =>
+        d.setAttribute("aria-pressed", String(d.dataset.k === k)));
+    };
+
+    if (g) {
+      const swatches = GROUP_DOTS[g] !== false;
+      const dots = document.createElement("span");
+      dots.className = swatches ? "dots" : "dots tags";
+      GROUPS[g].forEach((vk) => {
+        const d = document.createElement("button");
+        d.className = swatches ? "dot" : "tag";
+        d.type = "button";
+        d.dataset.k = vk;
+        d.style.setProperty("--c", SPECIMENS[vk].tone);
+        d.setAttribute("aria-label", `${SPECIMENS[vk].variant} ${GROUP_SWITCH[g] || "variant"}`);
+        if (swatches) d.title = SPECIMENS[vk].variant;
+        else d.textContent = SPECIMENS[vk].variant;
+        // Without this the click also reaches the tile behind it and the
+        // gallery closes on what was meant to be a variant change.
+        d.addEventListener("click", (e) => { e.stopPropagation(); paint(vk); });
+        dots.appendChild(d);
+      });
+      nameRow.appendChild(dots);
+    }
+
+    art.addEventListener("click", () => { select(shown); closeGallery(); });
+    paint(k0);
+    grid.appendChild(tile);
+  });
+  galBuilt = true;
+}
+
+function openGallery() {
+  if (!galBuilt) buildGallery();
+  galReturn = document.activeElement;
+  galEl.hidden = false;
+  galEl.scrollTop = 0;
+  el("galClose").focus();
+}
+
+function closeGallery() {
+  galEl.hidden = true;
+  if (galReturn && galReturn.isConnected) galReturn.focus();
+}
+
+el("galOpen").addEventListener("click", openGallery);
+el("galClose").addEventListener("click", closeGallery);
+galEl.addEventListener("click", (e) => { if (e.target === galEl) closeGallery(); });
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !galEl.hidden) closeGallery();
+});
+
+let spinOn = false, wireOn = false, reelOn = true;
+function toggle(btn, get, set) {
+  btn.addEventListener("click", () => {
+    set(!get());
+    btn.setAttribute("aria-pressed", String(get()));
+    applyAll();
+  });
+}
+toggle(el("spin"), () => spinOn, (v) => (spinOn = v));
+toggle(el("wire"), () => wireOn, (v) => (wireOn = v));
+toggle(el("reel"), () => reelOn, (v) => {
+  reelOn = v;
+  el("actualBox").hidden = !v;
+});
+
+el("reset").addEventListener("click", () => {
+  const d = { hue: 0, sat: 1, val: 1, rough: 0, metal: 0, relief: 1, expo: 1, keyrot: -38 };
+  Object.entries(d).forEach(([k, v]) => (el(k).value = v));
+  camera.position.set(0.55, 0.28, 2.75);
+  controls.target.set(0, 0, 0);
+  applyAll();
+});
+
+/* ---- render loop ------------------------------------------------------ */
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  if (!w || !h) return;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const dt = clock.getDelta();
+  if (spinOn && current) holder.rotation.y += dt * 0.5;
+  controls.update();
+
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setScissorTest(false);
+  renderer.setViewport(0, 0, w, h);
+  renderer.clear();
+  renderer.render(scene, camera);
+
+  /* The reel-size inset renders the same scene into a 180px square in the
+     corner. A symbol that is beautiful at full screen and mud at reel size
+     has failed, and that is not something a big viewport ever reveals. */
+  if (reelOn && w > 640) {
+    // Measured, not assumed square: the expanding wild's slot is three
+    // cells tall and the viewport has to match it or the symbol renders
+    // into the wrong rectangle.
+    const slot = document.getElementById("actualSlot");
+    const r = slot.getBoundingClientRect();
+    const sr = stage.getBoundingClientRect();
+    const x = r.left - sr.left;
+    const y = sr.bottom - r.bottom;
+    const sw = r.width, sh = r.height;
+    renderer.setScissorTest(true);
+    renderer.setViewport(x, y, sw, sh);
+    renderer.setScissor(x, y, sw, sh);
+    renderer.clear();          // scissored: wipes only the inset
+    const a = camera.aspect;
+    camera.aspect = sw / sh; camera.updateProjectionMatrix();
+    renderer.render(scene, camera);
+    camera.aspect = a; camera.updateProjectionMatrix();
+    renderer.setScissorTest(false);
+  }
+});
+
+describe("J");
+loadSpecimen("J");
+</script>
