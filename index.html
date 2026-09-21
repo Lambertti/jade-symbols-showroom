@@ -343,18 +343,40 @@
   }
   .actual[hidden] { display: none !important; }
   .actual-cap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-family: "IBM Plex Mono", ui-monospace, monospace;
     font-size: 10px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     letter-spacing: .06em;
     color: var(--dust);
     padding: 6px 8px;
     border-bottom: 1px solid var(--rule);
     background: rgba(10,8,7,.86);
     backdrop-filter: blur(6px);
+    /* The bar takes the pointer back: the box around it is deliberately
+       click-through so drags reach the turntable underneath. */
+    pointer-events: auto;
   }
+  .cap-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cap-btn {
+    flex: none;
+    width: 18px; height: 18px;
+    display: grid; place-items: center;
+    padding: 0;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    background: transparent;
+    color: var(--dust);
+    font: 600 12px/1 "IBM Plex Mono", ui-monospace, monospace;
+    cursor: pointer;
+    transition: color .16s ease, border-color .16s ease;
+  }
+  .cap-btn:hover { color: var(--bone); border-color: var(--dust); }
+  .cap-btn:focus-visible { outline: 2px solid var(--gild); outline-offset: 2px; }
+  /* Collapsed, only the bar is left -- a tab to tap to bring it back. */
+  .actual.collapsed { width: auto; }
+  .actual.collapsed .actual-cap { border-bottom: 0; }
   .actual-slot { height: var(--slot-h, 180px); position: relative; }
   /* An expanding wild covers a whole reel, so showing it in one square
      cell is a lie about the only thing that matters about it. The inset
@@ -541,7 +563,11 @@
     </div>
 
     <aside class="actual" id="actualBox">
-      <div class="actual-cap" id="actualCap">AT REEL SIZE &mdash; 180 px</div>
+      <div class="actual-cap">
+        <span class="cap-text" id="actualCap">AT REEL SIZE &mdash; 180 px</span>
+        <button class="cap-btn" id="reelToggle" aria-expanded="true"
+                aria-controls="actualSlot" title="Hide the reel preview">&minus;</button>
+      </div>
       <div class="actual-slot" id="actualSlot"></div>
     </aside>
 
@@ -986,6 +1012,11 @@ function describe(k) {
 
 const REEL_CELL = 180;
 let reelCells = 1;
+// Collapsed state survives a reload, because someone who folded it away to
+// see the model does not want it back every time they switch symbol.
+let reelOpen = (() => {
+  try { return localStorage.getItem("reelOpen") !== "0"; } catch { return true; }
+})();
 
 /* 180px is the real reel cell and stays the target, but a phone stage is
    ~440px tall and the expanded wild wants three of them. Rather than drop
@@ -1002,6 +1033,12 @@ function reelInset(s) {
   if (s) reelCells = s.tall ? 3 : 1;
   const cell = reelCell();
   const box = el("actualBox"), slot = el("actualSlot");
+  box.classList.toggle("collapsed", !reelOpen);
+  slot.hidden = !reelOpen;
+  const tog = el("reelToggle");
+  tog.innerHTML = reelOpen ? "&minus;" : "+";
+  tog.setAttribute("aria-expanded", String(reelOpen));
+  tog.title = reelOpen ? "Hide the reel preview" : "Show the reel preview";
   document.documentElement.style.setProperty("--cell", `${cell}px`);
   slot.style.setProperty("--slot-h", `${cell * reelCells}px`);
   // The caption has to fit the box it labels, and the box can be 70px
@@ -1010,7 +1047,9 @@ function reelInset(s) {
   const label = exact ? "AT REEL SIZE" : "REEL PREVIEW";
   const size = reelCells === 1 ? `${cell} px`
                                : `${cell}\u00d7${cell * reelCells}, ${reelCells} cells`;
-  el("actualCap").innerHTML = cell >= 150 ? `${label} &mdash; ${size}` : size;
+  // Folded away it is just a tab to tap, so it says only what it is.
+  el("actualCap").innerHTML = !reelOpen ? "REEL"
+                            : cell >= 150 ? `${label} &mdash; ${size}` : size;
   slot.textContent = "";
   for (let i = 1; i < reelCells; i++) {
     const rule = document.createElement("div");
@@ -1187,6 +1226,12 @@ function closeGallery() {
   if (galReturn && galReturn.isConnected) galReturn.focus();
 }
 
+el("reelToggle").addEventListener("click", () => {
+  reelOpen = !reelOpen;
+  try { localStorage.setItem("reelOpen", reelOpen ? "1" : "0"); } catch {}
+  reelInset(null);
+});
+
 el("galOpen").addEventListener("click", openGallery);
 el("galClose").addEventListener("click", closeGallery);
 galEl.addEventListener("click", (e) => { if (e.target === galEl) closeGallery(); });
@@ -1243,7 +1288,7 @@ renderer.setAnimationLoop(() => {
   /* The reel-size inset renders the same scene into a 180px square in the
      corner. A symbol that is beautiful at full screen and mud at reel size
      has failed, and that is not something a big viewport ever reveals. */
-  if (reelOn && !document.getElementById("actualBox").hidden) {
+  if (reelOn && reelOpen && !document.getElementById("actualBox").hidden) {
     // Measured, not assumed square: the expanding wild's slot is three
     // cells tall and the viewport has to match it or the symbol renders
     // into the wrong rectangle.
