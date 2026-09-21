@@ -564,7 +564,7 @@
       <button class="glyph wide" data-key="RED" data-group="jaguar" aria-pressed="false">Jaguar</button>
       <button class="glyph wide" data-key="COB" aria-pressed="false">Cobra</button>
       <button class="glyph wide" data-key="WILD" data-group="wild" aria-pressed="false">Wilds</button>
-      <button class="glyph wide" data-key="COIN" aria-pressed="false">Coin</button>
+      <button class="glyph wide" data-key="COIN3D" data-group="coin" aria-pressed="false">Coin</button>
     </div>
 
     <aside class="actual" id="actualBox">
@@ -753,10 +753,21 @@ const SPECIMENS = {
          role: "Sapphire \u00b7 high pay \u00b7 sculpted, baked unwrap",
          tone: "#3aa9ce", tris: "150,000", tex: "2048 \u00d7 2039", contours: 1,
          maps: "baked colour + normal + roughness", counter: "none", size: "18.1 MB" },
+  COIN3D: { file: "models/16_coin_3d.js", key: "16_coin_3d",
+            name: "Sun Coin \u2014 3D", short: "Coin", tier: "gold \u00b7 scatter",
+            role: "Gold \u00b7 scatter \u00b7 two-sided",
+            group: "coin", variant: "3D",
+            // Both builds are the same painting; only the geometry differs,
+            // so they share the one gallery tile.
+            tileKey: "14_coin_gold",
+            tone: "#f2c230", tris: "217,951", tex: "2048 \u00d7 2013 \u00d7 2",
+            maps: "two faces \u00b7 base + normal + roughness each",
+            contours: 1, counter: "none", size: "21 MB" },
   COIN: { file: "models/14_coin_gold.js", key: "14_coin_gold",
-          name: "Sun Coin", short: "Coin", tier: "gold \u00b7 scatter",
-          role: "Gold \u00b7 scatter",
-          tone: "#f2c230", tris: "103,221", tex: "2048 \u00d7 2013",
+          name: "Sun Coin \u2014 Flat", short: "Coin", tier: "gold \u00b7 scatter",
+          role: "Gold \u00b7 scatter \u00b7 single face",
+          group: "coin", variant: "2D",
+          tone: "#e0a820", tris: "103,221", tex: "2048 \u00d7 2013",
           contours: 1, counter: "none", size: "12.5 MB" },
   WILD: { file: "models/12_wild_mask.js", key: "12_wild_mask",
           name: "Wild \u2014 Mask", short: "Wild", tier: "gold \u00b7 substitutes",
@@ -787,20 +798,21 @@ const MAPS = "base \u00b7 normal \u00b7 roughness \u00b7 occlusion";
    explicitly rather than gathered from SPECIMENS, because this is the
    order the finishes are offered in and the record above is not in any
    order worth inheriting. */
-const GROUPS = { jaguar: ["RED", "JAG"], wild: ["WILD", "WILDP", "WILDX"] };
+const GROUPS = { jaguar: ["RED", "JAG"], wild: ["WILD", "WILDP", "WILDX"],
+                 coin: ["COIN3D", "COIN"] };
 // What a grouped tile is called, since "Ruby Jaguar" is the name of one
 // paint and the tile stands for both.
-const GROUP_NAME = { jaguar: "Jaguar", wild: "Wild" };
+const GROUP_NAME = { jaguar: "Jaguar", wild: "Wild", coin: "Coin" };
 // What the switch above the variants is called. Two paints of one carving
 // are a finish; a wild's mask/plaque/expanded are not, they are different
 // cuts of the same symbol.
-const GROUP_SWITCH = { jaguar: "Finish", wild: "Variant" };
+const GROUP_SWITCH = { jaguar: "Finish", wild: "Variant", coin: "Build" };
 // A colour swatch only communicates when the variants differ by colour.
 // The wild's three are the same gold, so three gold dots say nothing --
 // they get their names instead.
-const GROUP_DOTS = { jaguar: true, wild: false };
+const GROUP_DOTS = { jaguar: true, wild: false, coin: false };
 // Sheet order: the creatures first, then the face cards high to low.
-const GALLERY = ["RAM", "RED", "COB", "WILD", "COIN", "A", "K", "Q", "J"];
+const GALLERY = ["RAM", "RED", "COB", "WILD", "COIN3D", "A", "K", "Q", "J"];
 // Which paint each group was last left on, so coming back to the shelf
 // button returns to the one that was being looked at.
 const lastOf = {};
@@ -1183,7 +1195,7 @@ function buildGallery() {
     const paint = (k) => {
       shown = k;
       const s = SPECIMENS[k];
-      img.src = `gallery/${s.key}.webp`;
+      img.src = `gallery/${s.tileKey || s.key}.webp`;
       img.alt = s.name;
       // The panel names a build ("Ram Mask", "Jade \u00b7 high pay \u00b7 sculpted,
       // baked unwrap"); the gallery names a symbol. Same records, shorter
